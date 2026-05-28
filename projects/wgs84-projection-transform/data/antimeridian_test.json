@@ -1,0 +1,30 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "crossing-line",
+      "properties": {
+        "name": "Line crossing 180"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [175, 0],
+          [-175, 0]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "normal-point",
+      "properties": {
+        "name": "Normal Point"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [120, 30]
+      }
+    }
+  ]
+}
