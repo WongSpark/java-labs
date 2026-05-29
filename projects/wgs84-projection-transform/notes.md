@@ -75,3 +75,48 @@
 - **Logback**: 控制台输出 UTF-8 编码，`org.geotools` 日志级别设为 ERROR 抑制冗余输出
 - **Maven**: `maven-compiler-plugin` 强制 Java 17，`exec-maven-plugin` 预设 UTF-8 编码
 - **JVM**: `forceXY=true` 确保经纬度轴序符合直觉
+
+---
+
+## 记录日期: 2026-05-29（后续）
+
+### 重构与调试
+
+- [x] 抽取 `GeometryUtils`、`GeoJSONTransformer`，App.java 仅保留入口
+- [x] `GeometryUtilsTest` 新增 30 个单元测试
+- [x] 修复 VSCode Debug 工作目录不一致问题
+- [x] 修复输出路径与项目路径不同源的问题
+- [x] 修复 Windows 路径解析问题
+
+### 调试记录
+
+#### VSCode Debug 工作目录不一致
+- 现象: Debug 时进入 `if (inputFiles == null || inputFiles.length == 0)` 分支，提示找不到 data 文件夹；终端 `mvn exec:java` 正常。
+- 原因: 终端运行时 `user.dir` = 项目目录（`projects/wgs84-projection-transform`），Debug 时 `user.dir` = workspace 根目录（`D:\Work\JavaLabs`），`new File("data")` 相对路径指向了错误位置。
+- 尝试方案1: 向上遍历找 `pom.xml` → 失败，因为 `pom.xml` 在子目录而非上级。
+- 尝试方案2: 扫描一级子目录找 `data/` → 用户指出多项目场景下可能定位到别的项目。
+- 最终方案: 使用 `App.class.getProtectionDomain().getCodeSource().getLocation().toURI()` 获取类文件路径（`target/classes/...`），再向上遍历找 `pom.xml`，确保定位到本项目根目录。
+
+#### 输出路径与项目路径不同源
+- 现象: 转换 `firUirFull_R.json` 到 `EPSG:3857` 报错 `系统找不到指定的路径`。
+- 原因: `App.java` 在 `projectDir.resolve("output")` 创建输出目录，但 `GeoJSONTransformer.transform()` 内部用 `new File("output", ...)` 写文件，路径相对于 CWD。两处路径指向不同目录。
+- 解决: `transform()` 方法新增 `File outputDir` 参数，由 App 传入已解析的绝对路径。
+
+#### `System.exit(0)` 导致控制台关闭
+- 现象: Debug 时发生异常，catch 日志刚打出，控制台立刻消失，无法查看错误信息。
+- 原因: `main()` 末尾的 `System.exit(0)` 直接杀死 JVM 进程，Debug 控制台随之关闭。
+- 解决: 去掉 `System.exit(0)`，让 `main()` 自然结束。
+
+#### Windows 路径前导斜杠问题
+- 现象: `App.class.getProtectionDomain().getCodeSource().getLocation().getPath()` 在 Windows 返回 `/D:/Work/JavaLabs/...`（带前导斜杠），`Paths.get()` 无法正确解析并抛出异常，被 catch 吞掉后 fallback 到 `user.dir`。
+- 解决: 改用 `.toURI()` 而非 `.getPath()`，URI 格式在 Windows 下能正确解析。
+
+#### Maven 运行目录错误
+- 现象: 在 `D:\Work\JavaLabs` 下运行 `mvn compile exec:java` 报错 `There is no POM in this directory`。
+- 原因: Maven 需要在包含 `pom.xml` 的项目目录下执行。
+- 解决: `cd projects/wgs84-projection-transform` 后再运行，或用 `mvn -f projects/wgs84-projection-transform/pom.xml ...`。
+
+### 配置要点
+
+- **路径定位**: 优先使用 `user.dir`（终端），回退使用类文件路径向上找 `pom.xml`（Debug），兼容两种场景
+- **输出目录**: 用参数传递绝对路径，避免相对路径的 CWD 依赖

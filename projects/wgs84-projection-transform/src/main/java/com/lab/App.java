@@ -28,15 +28,17 @@ public class App {
             CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:4326");
             String[] targetCodes = {"EPSG:3411", "EPSG:3412", "EPSG:3857"};
 
-            File dataDir = new File("data");
+            Path projectDir = resolveProjectDir();
+            File dataDir = projectDir.resolve("data").toFile();
+
             File[] inputFiles = dataDir.listFiles((dir, name) -> name.endsWith(".json") || name.endsWith(".geojson"));
 
             if (inputFiles == null || inputFiles.length == 0) {
-                log.warn("data 文件夹下未找到 GeoJSON 文件");
+                log.warn("data 文件夹下未找到 GeoJSON 文件，已搜索路径: {}", dataDir.getAbsolutePath());
                 return;
             }
 
-            Path outputPath = Paths.get("output");
+            Path outputPath = projectDir.resolve("output");
             if (!Files.exists(outputPath)) {
                 Files.createDirectories(outputPath);
             }
@@ -44,7 +46,7 @@ public class App {
             for (File inputFile : inputFiles) {
                 log.info("正在处理文件: {}", inputFile.getName());
                 for (String targetCode : targetCodes) {
-                    GeoJSONTransformer.transform(inputFile, sourceCRS, targetCode);
+                    GeoJSONTransformer.transform(inputFile, sourceCRS, targetCode, outputPath.toFile());
                 }
             }
 
@@ -53,6 +55,31 @@ public class App {
         }
 
         log.info("实验结束");
-        System.exit(0);
+    }
+
+    /**
+     * 自动定位项目根目录：先尝试 user.dir（mvn 终端运行），
+     * 若 data/ 不存在则根据类文件路径向上查找 pom.xml（兼容 VSCode Debug 等任意工作目录）。
+     */
+    private static Path resolveProjectDir() {
+        Path userDir = Paths.get(System.getProperty("user.dir"));
+        if (userDir.resolve("data").toFile().exists()) {
+            return userDir;
+        }
+        // 根据类文件路径定位：target/classes/ → 项目根目录
+        // 使用 toURI() 避免 Windows 下 getPath() 返回 "/D:/..." 导致解析失败
+        try {
+            Path classPath = Paths.get(App.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            Path current = classPath.normalize();
+            while (current != null) {
+                if (current.resolve("pom.xml").toFile().exists()) {
+                    return current;
+                }
+                current = current.getParent();
+            }
+        } catch (Exception ignored) {
+        }
+        log.warn("未找到 data/ 目录，尝试使用当前工作目录: {}", userDir.toAbsolutePath());
+        return userDir;
     }
 }

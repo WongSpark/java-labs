@@ -32,11 +32,12 @@ public class GeoJSONTransformer {
 
     /**
      * 将单个 GeoJSON 文件转换到目标坐标系
+     * @param outputDir 输出目录（需已创建）
      */
-    public static void transform(File inputFile, CoordinateReferenceSystem sourceCRS, String targetCode) {
+    public static void transform(File inputFile, CoordinateReferenceSystem sourceCRS, String targetCode, File outputDir) {
         String outputFileName = inputFile.getName().replace(".json", "").replace(".geojson", "")
                                 + "_" + targetCode.replace(":", "") + ".json";
-        File outputFile = new File("output", outputFileName);
+        File outputFile = new File(outputDir, outputFileName);
 
         try (FileInputStream fis = new FileInputStream(inputFile);
              FileOutputStream fos = new FileOutputStream(outputFile)) {
