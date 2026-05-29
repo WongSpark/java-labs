@@ -11,10 +11,67 @@
 ### 调试记录
 - 现象: 转换 `firUirFull_R.json` 到 `EPSG:3857` 时报错 `Latitude 90°00.0'S is too close to a pole`。
 - 原因: Web Mercator (EPSG:3857) 投影范围有限，无法处理极点坐标。
-- 解决: 在转换前增加了纬度范围检查（+/- 85.06°）。对于超出范围的要素，程序会记录警告并跳过该要素，确保其他合法要素能正常转换并生成文件。
+- 解决: 在转换前增加了纬度截断（`clampLatitude`，限制到 ±85.06°），确保超出范围的数据也能正常输出而非直接跳过。
 
 ### 性能数据
 | 指标 | 数值 | 备注 |
 |:---|:---|:---|
 | 批量转换 (3文件 x 3坐标系) | 约 5-10s | 包含文件 IO 和 GeoTools 初始化 |
 | 单文件转换耗时 | < 1s | 依赖数据量大小 |
+
+---
+
+## 记录日期: 2026-05-29
+
+### 实验日志
+- [x] 新增经度标准化处理（`normalizeLongitude`），将超出 [-180, 180] 范围的经度归一化。
+- [x] 新增日更线（180° 经线）跨越检测与切割算法。
+- [x] 新增 `antimeridian_test.json` 测试数据文件。
+- [x] 编写 `crossesAntimeridian` 和 `splitAntimeridian` 的单元测试。
+- [x] 配置 Logback 日志框架，解决 GeoTools 内部 JUL 日志刷屏问题。
+- [x] 引入 `SLF4JBridgeHandler` 将 JUL 桥接到 SLF4J，统一日志管理。
+- [x] 配置 maven-surefire-plugin 和 maven-compiler-plugin，设置编码为 UTF-8。
+- [x] 完善 README 文档，包含完整代码运行流程图和技术栈说明。
+
+### 转换预处理流水线
+
+每个要素的几何体在进入 `JTS.transform()` 之前，依次经过以下预处理步骤：
+
+```
+原始几何体 (WGS84)
+  → Step 0: normalizeLongitude()   经度标准化到 [-180, 180]
+  → Step 1: crossesAntimeridian() 检测是否跨越日更线
+  → Step 2: splitAntimeridian()   若跨越，沿 180° 经线切割
+  → Step 3: clampLatitude()       仅 EPSG:3857，截断纬度至 ±85.06°
+  → Step 4: JTS.transform()       执行实际坐标投影变换
+```
+
+### 调试记录
+
+#### 日更线跨越问题
+- 现象: 部分飞行情报区（如俄罗斯 FIR）在投影后出现横跨两极的异常长条带。
+- 原因: 几何体跨越 180° 经线（如 170° ~ -170°），JTS 将经度差解释为 340° 而非 20°，导致投影错乱。
+- 解决: 实现日更线检测与切割算法。将经度平移至 [0, 360) 后沿 180° 裁剪为左右两部分，右侧平移回 [-180, 0]，按原几何类型重新组装。
+
+#### GeoTools JUL 日志刷屏
+- 现象: 运行程序时控制台被 GeoTools 内部 WARNING 级别日志刷屏。
+- 原因: GeoTools 内部使用 `java.util.logging` (JUL)，不受 SLF4J/Logback 管理。
+- 解决: 两重处理 — (1) `SLF4JBridgeHandler` 将 JUL 日志桥接到 SLF4J；(2) Logback 配置中设置 `org.geotools` 日志级别为 ERROR。
+
+#### 经纬度轴序
+- 现象: 部分教程中 GeoTools 输出为 (纬度, 经度) 顺序，与 GeoJSON 规范不一致。
+- 原因: GeoTools 默认遵循 CRS 定义中的轴序（EPSG:4326 为 lat/lon）。
+- 解决: 设置 `org.geotools.referencing.forceXY=true`，强制使用 (经度, 纬度) 轴序。
+
+### 新增测试覆盖
+
+| 测试方法 | 覆盖内容 |
+|:---|:---|
+| `testCrossesAntimeridian` | 普通矩形不跨越 / 跨日更线线段检测 |
+| `testSplitAntimeridian` | 跨日更线 Polygon → 切割为 MultiPolygon（2段） |
+
+### 配置要点
+
+- **Logback**: 控制台输出 UTF-8 编码，`org.geotools` 日志级别设为 ERROR 抑制冗余输出
+- **Maven**: `maven-compiler-plugin` 强制 Java 17，`exec-maven-plugin` 预设 UTF-8 编码
+- **JVM**: `forceXY=true` 确保经纬度轴序符合直觉
