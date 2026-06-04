@@ -75,7 +75,7 @@ public class GeoJSONTransformer {
 
                         // 2. 针对 EPSG:3857 纬度截断
                         if ("EPSG:3857".equals(targetCode)) {
-                            sourceGeom = GeometryUtils.clampLatitude(sourceGeom, -85.06, 85.06);
+                            sourceGeom = GeometryUtils.clampLatitude(sourceGeom, -88, 88);
                         }
 
                         // 3. 执行几何转换

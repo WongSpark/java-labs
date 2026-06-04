@@ -2,12 +2,17 @@ package com.lab;
 
 import lombok.extern.slf4j.Slf4j;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.GeodeticCalculator;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+// import org.geotools.referencing.GeodeticCalculator;
+// import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 /**
  * GeoJSON 坐标系批量转换实验
@@ -17,6 +22,16 @@ import java.nio.file.Paths;
 public class App {
 
     public static void main(String[] args) {
+
+        GeodeticCalculator calc = new GeodeticCalculator(DefaultGeographicCRS.WGS84);
+        System.out.println(DefaultGeographicCRS.WGS84);
+        calc.setStartingGeographicPoint(120, 36);
+        calc.setDestinationGeographicPoint(130, 40);
+
+        double distance = calc.getOrthodromicDistance(); // 米
+
+        System.out.println("距离: " + distance + " 米");
+
         // 将 Java Util Logging (JUL) 桥接到 SLF4J
         org.slf4j.bridge.SLF4JBridgeHandler.removeHandlersForRootLogger();
         org.slf4j.bridge.SLF4JBridgeHandler.install();
@@ -26,7 +41,7 @@ public class App {
         try {
             System.setProperty("org.geotools.referencing.forceXY", "true");
             CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:4326");
-            String[] targetCodes = {"EPSG:3411", "EPSG:3412", "EPSG:3857"};
+            String[] targetCodes = { "EPSG:3411", "EPSG:3412", "EPSG:3857" };
 
             Path projectDir = resolveProjectDir();
             File dataDir = projectDir.resolve("data").toFile();
