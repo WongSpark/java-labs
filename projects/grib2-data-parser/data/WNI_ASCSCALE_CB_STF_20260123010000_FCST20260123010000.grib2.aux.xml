@@ -1,0 +1,72 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>0[-] RESERVED="Reserved"</Description>
+    <Histograms>
+      <HistItem>
+        <HistMin>-0.17578125</HistMin>
+        <HistMax>450.17578125</HistMax>
+        <BucketCount>256</BucketCount>
+        <IncludeOutOfRange>1</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>1025329|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|2|0|0|0|0|3|0|0|0|0|0|1|0|0|0|0|0|19|0|0|0|0|19|0|0|0|0|0|40|0|0|0|0|0|73|0|0|0|0|82|0|0|0|0|0|141|0|0|0|0|0|196|0|0|0|0|0|203|0|0|0|0|203|0|0|0|0|0|249|0|0|0|0|0|282|0|0|0|0|229|0|0|0|0|0|261|0|0|0|0|0|249|0|0|0|0|290|0|0|0|0|0|232|0|0|0|0|0|224|0|0|0|0|214|0|0|0|0|0|232|0|0|0|0|0|237|0|0|0|0|272|0|0|0|0|0|289|0|0|0|0|0|225|0|0|0|0|0|288|0|0|0|0|363|0|0|0|0|0|383|0|0|0|0|0|407|0|0|0|0|538|0|0|0|0|0|643|0|0|0|0|0|673|0|0|0|0|717|0|0|0|0|0|705|0|0|0|0|0|574|0|0|0|0|636|0|0|0|0|0|630|0|0|0|0|0|0|0|0|0|0|1887</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="GRIB_UNIT">[-]</MDI>
+      <MDI key="GRIB_COMMENT">(prodType 0, cat 6, subcat 250) [-]</MDI>
+      <MDI key="GRIB_ELEMENT">unknown</MDI>
+      <MDI key="GRIB_SHORT_NAME">0-RESERVED</MDI>
+      <MDI key="GRIB_REF_TIME">1769130000</MDI>
+      <MDI key="GRIB_VALID_TIME">1769130000</MDI>
+      <MDI key="GRIB_FORECAST_SECONDS">0</MDI>
+      <MDI key="GRIB_DISCIPLINE">0(Meteorological)</MDI>
+      <MDI key="GRIB_IDS">CENTER=100 SUBCENTER=0 MASTER_TABLE=2 LOCAL_TABLE=0 SIGNF_REF_TIME=1(Start_of_Forecast) REF_TIME=2026-01-23T01:00:00Z PROD_STATUS=0(Operational) TYPE=2(Analysis_and_forecast)</MDI>
+      <MDI key="GRIB_PDS_PDTN">0</MDI>
+      <MDI key="GRIB_PDS_TEMPLATE_NUMBERS">6 250 2 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 255 255 255 255 255 255</MDI>
+      <MDI key="GRIB_PDS_TEMPLATE_ASSEMBLED_VALUES">6 250 2 0 0 0 0 1 0 1 0 0 255 -127 -2147483647</MDI>
+    </Metadata>
+    <Metadata domain="GRIB">
+      <MDI key="DRS_DRTN">3</MDI>
+      <MDI key="DRS_REF_VALUE">0.0000000000</MDI>
+      <MDI key="DRS_BINARY_SCALE_FACTOR">0</MDI>
+      <MDI key="DRS_DECIMAL_SCALE_FACTOR">2</MDI>
+      <MDI key="DRS_NBITS">17</MDI>
+      <MDI key="DRS_SPATIAL_DIFFERENCING_ORDER">1</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="2">
+    <Description>0[-] RESERVED="Reserved"</Description>
+    <Histograms>
+      <HistItem>
+        <HistMin>-0.0625</HistMin>
+        <HistMax>160.0625</HistMax>
+        <BucketCount>256</BucketCount>
+        <IncludeOutOfRange>1</IncludeOutOfRange>
+        <Approximate>0</Approximate>
+        <HistCounts>1024815|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|11961|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|589|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|306|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|142|0|0|0|0|0|0|0|0|0|0|0|0|0|0|88|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|112|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|120|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|55|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|20|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|11|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|12|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|9</HistCounts>
+      </HistItem>
+    </Histograms>
+    <Metadata>
+      <MDI key="GRIB_UNIT">[-]</MDI>
+      <MDI key="GRIB_COMMENT">(prodType 0, cat 6, subcat 251) [-]</MDI>
+      <MDI key="GRIB_ELEMENT">unknown</MDI>
+      <MDI key="GRIB_SHORT_NAME">0-RESERVED</MDI>
+      <MDI key="GRIB_REF_TIME">1769130000</MDI>
+      <MDI key="GRIB_VALID_TIME">1769130000</MDI>
+      <MDI key="GRIB_FORECAST_SECONDS">0</MDI>
+      <MDI key="GRIB_DISCIPLINE">0(Meteorological)</MDI>
+      <MDI key="GRIB_IDS">CENTER=100 SUBCENTER=0 MASTER_TABLE=2 LOCAL_TABLE=0 SIGNF_REF_TIME=1(Start_of_Forecast) REF_TIME=2026-01-23T01:00:00Z PROD_STATUS=0(Operational) TYPE=2(Analysis_and_forecast)</MDI>
+      <MDI key="GRIB_PDS_PDTN">0</MDI>
+      <MDI key="GRIB_PDS_TEMPLATE_NUMBERS">6 251 2 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 255 255 255 255 255 255</MDI>
+      <MDI key="GRIB_PDS_TEMPLATE_ASSEMBLED_VALUES">6 251 2 0 0 0 0 1 0 1 0 0 255 -127 -2147483647</MDI>
+    </Metadata>
+    <Metadata domain="GRIB">
+      <MDI key="DRS_DRTN">3</MDI>
+      <MDI key="DRS_REF_VALUE">0.0000000000</MDI>
+      <MDI key="DRS_BINARY_SCALE_FACTOR">0</MDI>
+      <MDI key="DRS_DECIMAL_SCALE_FACTOR">2</MDI>
+      <MDI key="DRS_NBITS">15</MDI>
+      <MDI key="DRS_SPATIAL_DIFFERENCING_ORDER">1</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

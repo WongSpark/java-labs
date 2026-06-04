@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="GB2312"?>
+<SuperMapImageConfig xmlns="https://www.supermap.com/">
+<SuperMapStatisticsInfo>
+<RasterDataset Name="WNI_ASCSCALE_CB_STF_20260123010000_FCST20260123010000">
+<Band_0>
+<IsDirty>0</IsDirty>
+<Min>0.000000</Min>
+<Max>450.000000</Max>
+<Most/>
+<Least/>
+</Band_0>
+<Band_1>
+<IsDirty>0</IsDirty>
+<Min>0.000000</Min>
+<Max>160.000000</Max>
+<Most/>
+<Least/>
+</Band_1>
+</RasterDataset>
+</SuperMapStatisticsInfo>
+</SuperMapImageConfig>
