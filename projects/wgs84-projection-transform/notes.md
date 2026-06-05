@@ -120,3 +120,95 @@
 
 - **路径定位**: 优先使用 `user.dir`（终端），回退使用类文件路径向上找 `pom.xml`（Debug），兼容两种场景
 - **输出目录**: 用参数传递绝对路径，避免相对路径的 CWD 依赖
+
+---
+
+## 记录日期: 2026-06-05
+
+### 实验日志
+
+- [x] 按目标投影分流预处理管线：3857 / 3411 / 3412 各走独立分支
+- [x] 3411/3412 跳过日更线拆分（极地投影中 180° 不是物理边界）
+- [x] 3411 过滤南半球数据，3412 过滤北半球数据
+- [x] 实现 `mergeAntimeridianSplit`：合并数据提供方在 180° 处预拆分的 MultiPolygon
+- [x] 实现端点匹配拼接算法（`stitchByEndpointMatch`），替代缝顶点识别方案
+- [x] 修复 `clipToHemisphere` 退化几何问题：过滤 LineString/Point 等非面状结果
+- [x] 新增 `firUirFbNo180_R.json` 测试数据（498 个全球 FIR 面要素）
+
+### 转换预处理流水线（最终版）
+
+```
+原始几何体 (WGS84)
+  → Step 0: normalizeLongitude()           经度标准化到 [-180, 180]
+
+  ┌─ EPSG:3857 ─────────────────────────────────────────┐
+  │ → Step 1: crossesAntimeridian() 检测                │
+  │ → Step 2: splitAntimeridian()   日更线切割          │
+  │ → Step 3: clampLatitude()       纬度截断 [-88, 88]  │
+  │ → Step 4: JTS.transform()                           │
+  └─────────────────────────────────────────────────────┘
+
+  ┌─ EPSG:3411 ─────────────────────────────────────────┐
+  │ → Step 1: mergeAntimeridianSplit()  合并预拆分面    │
+  │ → Step 2: clipToNorthernHemisphere() 纬度 >= 0      │
+  │ → Step 3: JTS.transform()                           │
+  └─────────────────────────────────────────────────────┘
+
+  ┌─ EPSG:3412 ─────────────────────────────────────────┐
+  │ → Step 1: mergeAntimeridianSplit()  合并预拆分面    │
+  │ → Step 2: clipToSouthernHemisphere() 纬度 <= 0      │
+  │ → Step 3: JTS.transform()                           │
+  └─────────────────────────────────────────────────────┘
+```
+
+### 调试记录
+
+#### forceXY 必须位于首行
+- 现象: 转换 `firUirFull_R.json` 到 EPSG:3857 报错 `Latitude 163°00.0'N is too close to a pole`。
+- 原因: `System.setProperty("org.geotools.referencing.forceXY", "true")` 设置在 CRS.decode() 之后，GeoTools 已按默认轴序 (lat, lon) 初始化，经度被当作纬度处理。
+- 解决: 将 `forceXY` 移至 `main()` 第一行可执行语句，在任何 GeoTools 类加载前生效。
+
+#### 源数据 180° 预拆分问题
+- 现象: UHMM（马加丹飞行情报区）在 3411 输出中仍显示 180° 分割线，类型为 MultiPolygon。
+- 原因: 数据提供方已将 UHMM 沿 180° 经线预拆分为 MultiPolygon（两个子面），但极地投影中 180° 不是物理边界，拆分反而产生视觉缝隙。
+- 尝试方案 1 — JTS `union()`: 失败。两个子面在 180° 缝线上存在浮点精度差异（`87.568031` vs `87.56802850718032`），union 无法溶解共享边界。
+- 尝试方案 2 — 顶点拼接 V1（删除所有缝顶点）: 失败。Part 0 非缝路径最高只到 78°N，Part 1 最高到 87.6°N，产生 76.9° 缝隙。
+- 尝试方案 3 — 顶点拼接 V2（保留极端纬度缝端点）: 成功但有冗余复杂度（boolean 标记、极值追踪、环形收集）。
+- **最终方案 — 端点匹配拼接**: 两个环各自去掉闭合顶点 → 开放路径，在 180° 线上匹配端点，按匹配关系拼接（必要时翻转），跳过重复端点闭合。
+
+#### 半球裁剪产生退化几何
+- 现象: AYPM（莫尔兹比港 FIR，纬度 [-12, 0]）在 3411 输出中变成 LineString；GLRB 在 3412 输出中变成 Point。
+- 原因: 要素仅触及半球边界（纬度=0），JTS `intersection()` 只能交出赤道上的线段或点。
+- 解决: `clipToHemisphere` 返回前用 `extractPolygons` 提取面状结果，非 Polygon/MultiPolygon 的统一返回 null（该半球无有效面状覆盖）。
+
+### 端点匹配拼接算法
+
+```
+输入: 两个 Polygon（180° 预拆分的两半）
+算法:
+  1. P2 负经度部分 x += 360，移至 [180, 360) 区间
+  2. 去掉两个环的闭合顶点 → 开放路径 open0, open1
+  3. 匹配 open0 的末端与 open1 的端点（180° 线上，容差 1e-4）:
+     - e0 ≈ s1 (P1尾→P2头):   open0 + open1[1:] + [open0[0]]
+     - e0 ≈ e1 (P1尾→P2尾):   open0 + reverse(open1)[1:] + [open0[0]]
+     - s0 ≈ e1 (P1头→P2尾):   open1 + open0[1:] + [open1[0]]
+     - s0 ≈ s1 (P1头→P2头):   reverse(open0) + open1[1:] + [reverse(open0)[0]]
+  4. 匹配失败 → 回退 UnaryUnionOp.union()
+  5. normalizeLongitude() 将拼接结果归一化到 [-180, 180]
+```
+
+### 新增测试覆盖
+
+| 测试内容 | 说明 |
+|:---|:---|
+| `mergeAntimeridianSplit` | 通过集成测试覆盖（`firUirFull_R_R.json` 中 UHMM 要素） |
+| `clipToNorthernHemisphere` | 过滤南半球 + 退化几何（LineString/Point → null） |
+| `clipToSouthernHemisphere` | 过滤北半球 + 退化几何 |
+| 赤道边界要素 | AYPM (lat -12→0) 在 3411 中正确跳过 |
+
+### 配置要点
+
+- **forceXY**: 必须是 `main()` 中第一行可执行语句，任何 GeoTools 类使用前
+- **3411/3412**: 不做日更线拆分（极地投影不需要），改做预拆分合并 + 半球过滤
+- **3857**: 做日更线拆分 + 纬度截断，维持原有逻辑
+- **半球裁剪**: 仅保留 Polygon/MultiPolygon，过滤退化线/点
