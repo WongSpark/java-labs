@@ -22,14 +22,14 @@ import java.nio.file.Paths;
 public class App {
 
     public static void main(String[] args) {
+        // 需在所有Geotools的第一行，否则会出现xy颠倒的问题
+        System.setProperty("org.geotools.referencing.forceXY", "true");
 
         GeodeticCalculator calc = new GeodeticCalculator(DefaultGeographicCRS.WGS84);
         System.out.println(DefaultGeographicCRS.WGS84);
         calc.setStartingGeographicPoint(120, 36);
         calc.setDestinationGeographicPoint(130, 40);
-
-        double distance = calc.getOrthodromicDistance(); // 米
-
+        double distance = calc.getOrthodromicDistance();
         System.out.println("距离: " + distance + " 米");
 
         // 将 Java Util Logging (JUL) 桥接到 SLF4J
@@ -39,7 +39,6 @@ public class App {
         log.info("开始 GeoJSON 批量坐标转换实验");
 
         try {
-            System.setProperty("org.geotools.referencing.forceXY", "true");
             CoordinateReferenceSystem sourceCRS = CRS.decode("EPSG:4326");
             String[] targetCodes = { "EPSG:3411", "EPSG:3412", "EPSG:3857" };
 

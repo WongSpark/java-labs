@@ -65,20 +65,37 @@ public class GeoJSONTransformer {
                         // 0. 经度标准化：将所有经度归一化到 [-180, 180]
                         sourceGeom = GeometryUtils.normalizeLongitude(sourceGeom);
 
-                        // 1. 检查是否跨越日更线，如果跨越则进行切割
-                        if (GeometryUtils.crossesAntimeridian(sourceGeom)) {
-                            log.info("检测到要素 {} 跨越日更线，正在进行切割...", feature.getID());
-                            sourceGeom = GeometryUtils.splitAntimeridian(sourceGeom);
-                            log.info("切割完成，结果类型: {}, 几何部件数: {}",
-                                sourceGeom.getGeometryType(), sourceGeom.getNumGeometries());
-                        }
-
-                        // 2. 针对 EPSG:3857 纬度截断
                         if ("EPSG:3857".equals(targetCode)) {
+                            // 3857 (Web Mercator)：需要日更线拆分 + 纬度截断
+                            if (GeometryUtils.crossesAntimeridian(sourceGeom)) {
+                                log.info("检测到要素 {} 跨越日更线，正在进行切割...", feature.getID());
+                                sourceGeom = GeometryUtils.splitAntimeridian(sourceGeom);
+                                log.info("切割完成，结果类型: {}, 几何部件数: {}",
+                                    sourceGeom.getGeometryType(), sourceGeom.getNumGeometries());
+                            }
                             sourceGeom = GeometryUtils.clampLatitude(sourceGeom, -88, 88);
+                        } else if ("EPSG:3411".equals(targetCode)) {
+                            if(feature.getAttribute("firUirIdentifier").equals("UHMM")) {
+                                log.info("检测到要素 {} 位于俄罗斯远东，正在进行特殊处理...", feature.getID());
+                            }
+                            // 3411 (北极立体投影)：先合并源数据预拆分的 MultiPolygon，再裁剪南半球
+                            sourceGeom = GeometryUtils.mergeAntimeridianSplit(sourceGeom);
+                            sourceGeom = GeometryUtils.clipToNorthernHemisphere(sourceGeom);
+                            if (sourceGeom == null) {
+                                log.debug("要素 {} 不在北半球，跳过 3411 转换", feature.getID());
+                                continue;
+                            }
+                        } else if ("EPSG:3412".equals(targetCode)) {
+                            // 3412 (南极立体投影)：先合并源数据预拆分的 MultiPolygon，再裁剪北半球
+                            sourceGeom = GeometryUtils.mergeAntimeridianSplit(sourceGeom);
+                            sourceGeom = GeometryUtils.clipToSouthernHemisphere(sourceGeom);
+                            if (sourceGeom == null) {
+                                log.debug("要素 {} 不在南半球，跳过 3412 转换", feature.getID());
+                                continue;
+                            }
                         }
 
-                        // 3. 执行几何转换
+                        // 执行几何转换
                         Geometry targetGeom = JTS.transform(sourceGeom, transform);
                         featureBuilder.addAll(feature.getAttributes());
                         featureBuilder.set(schema.getGeometryDescriptor().getLocalName(), targetGeom);
